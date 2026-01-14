@@ -63,7 +63,12 @@ echo "=========================================="
 echo ""
 
 if command -v vlc &> /dev/null; then
-    echo "✅ VLC installed: $(vlc --version | head -1)"
+    VLC_VERSION=$(sudo -u vlc-user vlc --version 2>/dev/null | head -1)
+    if [ -n "$VLC_VERSION" ]; then
+        echo "✅ VLC installed: $VLC_VERSION"
+    else
+        echo "✅ VLC installed: $(vlc --version | head -1)"
+    fi
 else
     echo "❌ VLC NOT installed"
     exit 1
@@ -82,7 +87,12 @@ echo "Connecting to: rtsp://${CAMERA_USER}:****@${CAMERA_IP}:${RTSP_PORT}${STREA
 echo ""
 
 # Run VLC for 10 seconds, then kill it
-timeout 10 vlc -I dummy "$RTSP_URL" vlc://quit 2>&1 | head -20 &
+if id "vlc-user" &>/dev/null; then
+    timeout 10 sudo -u vlc-user vlc -I dummy "$RTSP_URL" vlc://quit 2>&1 | head -20 &
+else
+    echo "❌ vlc-user not exists"
+    exit 1
+fi
 VLC_PID=$!
 sleep 10
 kill $VLC_PID 2>/dev/null || true
@@ -143,13 +153,18 @@ pkill -9 vlc 2>/dev/null || true
 sleep 2
 
 # Test VLC streaming
-timeout 10 vlc -I dummy \
-    --no-sout-rtp-sap \
-    --no-sout-standard-sap \
-    --ttl=1 \
-    --sout="#transcode{vcodec=h264,acodec=none}:rtp{sdp=${RTSP_DEST}}" \
-    "$RTSP_URL" \
-    vlc://quit 2>&1 | head -30 &
+if id "vlc-user" &>/dev/null; then
+    timeout 10 sudo -u vlc-user vlc -I dummy \
+        --no-sout-rtp-sap \
+        --no-sout-standard-sap \
+        --ttl=1 \
+        --sout="#transcode{vcodec=h264,acodec=none}:rtp{sdp=${RTSP_DEST}}" \
+        "$RTSP_URL" \
+        vlc://quit 2>&1 | head -30 &
+else
+    echo "❌ vlc-user not exists"
+    exit 1
+fi
 
 VLC_PID=$!
 sleep 10
