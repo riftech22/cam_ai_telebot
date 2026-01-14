@@ -41,6 +41,17 @@ detection:
   motion_detection_enabled: true  # Aktifkan deteksi gerakan
   save_unknown_faces: true
   max_detections_per_minute: 10
+  
+  # CPU Optimization Settings
+  max_cpu_cores: 3         # Maximum CPU cores untuk YOLOv8 inference (default: 3)
+  inference_size: 320       # Ukuran input image untuk inference (320=cepat, 640=standar, 0=original)
+  model_size: "yolov8n"   # Model YOLOv8 (n=.nano, s=small, m=medium, l=large, x=extra large)
+  
+  # CPU Performance Tips:
+  # - max_cpu_cores: 2-3 untuk CPU terbatas, 4+ untuk CPU kuat
+  # - inference_size: 320 untuk CPU terbatas, 640 untuk CPU kuat, 0 untuk original (lambat)
+  # - model_size: yolov8n tercepat, yolov8s sedang, yolov8m+ lambat di CPU
+  # - Untuk CPU 3 core: max_cpu_cores=3, inference_size=320, model_size=yolov8n
 
 # Konfigurasi Motion Detection
 motion_detection:

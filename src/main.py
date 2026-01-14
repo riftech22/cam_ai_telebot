@@ -188,11 +188,18 @@ class CCTVTelebotApp:
             self.face_detector = FaceDetector()
             self.logger.info("Face detector diinisialisasi")
             
-            # Person Detector dengan YOLOv8n
+            # Person Detector dengan YOLOv8n - Optimasi CPU
+            max_cpu_cores = self.config['detection'].get('max_cpu_cores', 3)
+            inference_size = self.config['detection'].get('inference_size', 320)
+            model_size = self.config['detection'].get('model_size', 'yolov8n')
+            
             self.person_detector = PersonDetector(
-                confidence_threshold=self.config['detection']['min_confidence']
+                confidence_threshold=self.config['detection']['min_confidence'],
+                max_cpu_cores=max_cpu_cores,
+                inference_size=inference_size,
+                model_size=model_size
             )
-            self.logger.info("Person detector (YOLOv8n) diinisialisasi")
+            self.logger.info(f"Person detector (YOLO{model_size[5:]}) diinisialisasi dengan {max_cpu_cores} CPU cores, inference size: {inference_size}")
             
             # Face Recognition
             self.face_recognition = FaceRecognition(

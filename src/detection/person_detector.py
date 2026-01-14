@@ -13,19 +13,29 @@ from ultralytics import YOLO
 class PersonDetector:
     """Kelas untuk mendeteksi orang menggunakan YOLOv8n"""
     
-    def __init__(self, confidence_threshold: float = 0.5, model_size: str = "yolov8n"):
+    def __init__(self, confidence_threshold: float = 0.5, model_size: str = "yolov8n", 
+                 max_cpu_cores: int = 3, inference_size: int = 320):
         """
         Inisialisasi Person Detector dengan YOLOv8n
         
         Args:
             confidence_threshold: Threshold untuk confidence detection (0.0-1.0)
             model_size: Ukuran model YOLO (yolov8n, yolov8s, yolov8m, yolov8l, yolov8x)
+            max_cpu_cores: Maximum CPU cores untuk inference (default: 3)
+            inference_size: Ukuran input image untuk inference (default: 320)
         """
         self.confidence_threshold = confidence_threshold
         self.model_size = model_size
+        self.max_cpu_cores = max_cpu_cores
+        self.inference_size = inference_size
         self.model = None
         self.person_class_id = 0  # ID class 'person' di COCO dataset
         self.logger = logging.getLogger(__name__)
+        
+        # Optimasi CPU: Batasi jumlah threads
+        import torch
+        torch.set_num_threads(max_cpu_cores)
+        self.logger.info(f"Torch threads set to: {max_cpu_cores}")
         
         self._load_model()
     
@@ -91,8 +101,17 @@ class PersonDetector:
             self.logger.debug(f"Starting person detection with confidence threshold: {self.confidence_threshold}")
             self.logger.debug(f"Frame shape: {frame.shape}")
             
-            # Jalankan inference dengan YOLO
-            results = self.model(frame, verbose=verbose, conf=self.confidence_threshold)
+            # Optimasi CPU: Resize frame untuk inference lebih cepat
+            original_shape = frame.shape
+            if self.inference_size > 0:
+                # Resize frame untuk inference (lebih kecil = lebih cepat)
+                inference_frame = cv2.resize(frame, (self.inference_size, self.inference_size))
+                self.logger.debug(f"Resized frame from {original_shape} to {(self.inference_size, self.inference_size)} for inference")
+            else:
+                inference_frame = frame
+            
+            # Jalankan inference dengan YOLO pada frame yang diresize
+            results = self.model(inference_frame, verbose=verbose, conf=self.confidence_threshold)
             
             self.logger.debug(f"YOLO inference completed, {len(results)} result(s)")
             
@@ -100,6 +119,15 @@ class PersonDetector:
             detections = []
             total_boxes = 0
             person_boxes = 0
+            
+            # Hitung scale factor jika frame di-resize
+            if self.inference_size > 0 and inference_frame is not frame:
+                scale_x = original_shape[1] / self.inference_size
+                scale_y = original_shape[0] / self.inference_size
+                self.logger.debug(f"Scale factors: x={scale_x:.2f}, y={scale_y:.2f}")
+            else:
+                scale_x = 1.0
+                scale_y = 1.0
             
             for result in results:
                 boxes = result.boxes
@@ -114,14 +142,20 @@ class PersonDetector:
                         
                         # Filter hanya class 'person' (class_id = 0)
                         if class_id == self.person_class_id:
-                            # Dapatkan koordinat bounding box
+                            # Dapatkan koordinat bounding box dari inference frame
                             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                             
-                            # Convert ke (x, y, w, h) format
-                            x = int(x1)
-                            y = int(y1)
-                            w = int(x2 - x1)
-                            h = int(y2 - y1)
+                            # Scale bounding box ke frame asli
+                            x = int(x1 * scale_x)
+                            y = int(y1 * scale_y)
+                            w = int((x2 - x1) * scale_x)
+                            h = int((y2 - y1) * scale_y)
+                            
+                            # Clamp ke frame boundary
+                            x = max(0, min(x, original_shape[1]))
+                            y = max(0, min(y, original_shape[0]))
+                            w = max(0, min(w, original_shape[1] - x))
+                            h = max(0, min(h, original_shape[0] - y))
                             
                             detections.append((x, y, w, h, confidence))
                             person_boxes += 1
