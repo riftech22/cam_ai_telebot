@@ -11,7 +11,7 @@ Sistem CCTV cerdas dengan integrasi Telegram bot untuk kamera V380 IP. Sistem in
 ### 🔌 **Koneksi Kamera IP V380**
 - Koneksi otomatis ke kamera CCTV V380
 - IP: 10.26.27.196
-- User: admin, Password: Kuncong0203
+- User: admin, Password: admin
 - Auto-reconnect jika koneksi terputus
 
 ### 👁️ **Deteksi Orang Real-time**
@@ -111,12 +111,12 @@ cam_ai_telebot/
 
 #### 1. Clone/Download Repository
 ```bash
-cd /home/riftech/projeck
+cd /opt
 # Jika menggunakan git:
-git clone https://github.com/username/cam_ai_telebot.git
+git clone https://github.com/riftech22/cam_ai_telebot.git
 cd cam_ai_telebot
 # Atau jika sudah ada:
-cd cam_ai_telebot
+cd /opt/cam_ai_telebot
 ```
 
 #### 2. Jalankan Script Instalasi
