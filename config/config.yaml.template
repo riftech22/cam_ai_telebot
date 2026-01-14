@@ -35,7 +35,7 @@ camera:
 detection:
   enabled: true
   min_confidence: 0.5       # Minimum confidence untuk deteksi orang (0.0-1.0)
-  detection_interval: 2     # Interval deteksi dalam detik
+  detection_interval: 1     # Interval deteksi dalam detik (1 = lebih cepat/real-time)
   face_recognition_enabled: true
   person_detection_enabled: true
   motion_detection_enabled: true  # Aktifkan deteksi gerakan
@@ -46,7 +46,7 @@ detection:
 motion_detection:
   min_contour_area: 500    # Minimum area kontur untuk dianggap gerakan
   sensitivity: 25            # Sensitivitas (semakin rendah = semakin sensitif)
-  cooldown_seconds: 5         # Jeda setiap notifikasi gerakan (detik)
+  cooldown_seconds: 2         # Jeda setiap notifikasi gerakan (detik) - 2 detik = lebih cepat
   min_motion_percentage: 2   # Minimum persentase frame yang berubah
 
 # Konfigurasi Notifikasi
@@ -55,7 +55,26 @@ notification:
   send_on_person: true               # Kirim notifikasi saat ada orang
   send_on_unknown_face: true
   include_motion_mask: true          # Sertakan mask gerakan di foto
-  person_detection_cooldown: 30        # Jeda setiap notifikasi deteksi orang (detik) - mencegah spam
+  person_detection_cooldown: 5        # Jeda setiap notifikasi deteksi orang (detik) - 5 detik = real-time tapi tidak spam
+  
+# MODE NOTIFIKASI:
+# Real-time (Cepat):
+#   - detection_interval: 1
+#   - motion_detection.cooldown_seconds: 2
+#   - notification.person_detection_cooldown: 5
+#   Hasil: Notifikasi sangat cepat, tapi bisa sedikit spam (5-10 notifikasi/menit)
+#
+# Balanced (Dianjurkan):
+#   - detection_interval: 1
+#   - motion_detection.cooldown_seconds: 3
+#   - notification.person_detection_cooldown: 10
+#   Hasil: Cukup cepat, tidak terlalu spam (3-6 notifikasi/menit)
+#
+# Anti-spam (Lambat):
+#   - detection_interval: 2
+#   - motion_detection.cooldown_seconds: 5
+#   - notification.person_detection_cooldown: 30
+#   Hasil: Tidak spam, tapi response lambat (1-2 notifikasi/menit)
   
 # Konfigurasi Recording
 recording:
