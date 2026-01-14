@@ -53,7 +53,7 @@ echo "MEMBUAT SYSTEMD SERVICE"
 echo "=========================================="
 echo ""
 
-SERVICE_FILE="/etc/systemd/systemd/gstreamer-proxy.service"
+SERVICE_FILE="/etc/systemd/system/gstreamer-proxy.service"
 
 sudo tee $SERVICE_FILE > /dev/null <<EOF
 [Unit]
