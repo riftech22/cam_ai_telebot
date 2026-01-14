@@ -25,7 +25,8 @@ pyyaml==6.0.1
 scipy==1.11.3
 
 # Library untuk dlib (dibutuhkan face-recognition)
-dlib==19.24.2
+# Gunakan versi yang kompatibel dengan CMake 3.22+
+dlib==19.24.4
 
 # Runtime untuk model ONNX
 onnxruntime==1.16.3
