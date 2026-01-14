@@ -60,9 +60,9 @@ echo ""
 
 SERVICE_FILE="/etc/systemd/system/vlc-rtsp-proxy.service"
 
-# Build RTSP URL dan VLC command untuk menghindari escaping issues
+# Build RTSP/HTTP URL dan VLC command untuk menghindari escaping issues
 RTSP_SOURCE="rtsp://${CAMERA_USER}:${CAMERA_PASS}@${CAMERA_IP}:${RTSP_PORT}${STREAM_URL}?rtsp_transport=tcp&latency=0"
-RTSP_DEST="rtsp://127.0.0.1:${LOCAL_RTSP_PORT}/camera"
+HTTP_DEST="127.0.0.1:${LOCAL_RTSP_PORT}"
 
 sudo tee $SERVICE_FILE > /dev/null <<EOF
 [Unit]
@@ -81,9 +81,12 @@ ExecStart=/usr/bin/vlc -I dummy \
     --no-audio \
     --no-sout-rtp-sap \
     --no-sout-standard-sap \
-    --ttl=1 \
-    --sout="#transcode{vcodec=h264}:rtp{sdp=${RTSP_DEST}}" \
+    --sout="#transcode{vcodec=h264,acodec=none}:std{access=http,mux=ts,dst=:${LOCAL_RTSP_PORT}}" \
     "${RTSP_SOURCE}"
+
+# Note: Using HTTP-TCP streaming instead of RTSP because VLC 3.0.16
+# doesn't have built-in RTSP server module. HTTP streaming is more reliable
+# and compatible with OpenCV VideoCapture.
 
 [Install]
 WantedBy=multi-user.target
@@ -124,14 +127,15 @@ echo "=========================================="
 echo ""
 echo "VLC RTSP Proxy service telah diinstall dan dijalankan!"
 echo ""
-echo "Local RTSP URL:"
-echo "rtsp://127.0.0.1:$LOCAL_RTSP_PORT/camera"
+echo "Local HTTP-TCP Streaming URL:"
+echo "http://127.0.0.1:$LOCAL_RTSP_PORT"
 echo ""
 echo "Untuk menggunakan VLC proxy di CCTV AI Bot:"
 echo "1. Edit config: nano /opt/cam_ai_telebot/config/config.yaml"
 echo "2. Set: use_vlc_proxy: true"
-echo "3. Set: vlc_rtsp_port: $LOCAL_RTSP_PORT"
-echo "4. Restart bot: sudo systemctl restart cctv-ai-bot"
+echo "3. Set: use_http_stream: true"
+echo "4. Set: vlc_http_port: $LOCAL_RTSP_PORT"
+echo "5. Restart bot: sudo systemctl restart cctv-ai-bot"
 echo ""
 echo "Service management:"
 echo "• Check status: sudo systemctl status vlc-rtsp-proxy"

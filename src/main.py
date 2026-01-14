@@ -184,7 +184,9 @@ class CCTVTelebotApp:
                 max_retries=camera_config.get('max_retries', 5),
                 use_vlc_proxy=camera_config.get('use_vlc_proxy', False),
                 vlc_rtsp_port=camera_config.get('vlc_rtsp_port', 8554),
-                vlc_rtsp_path=camera_config.get('vlc_rtsp_path', '/camera')
+                vlc_rtsp_path=camera_config.get('vlc_rtsp_path', '/camera'),
+                use_http_stream=camera_config.get('use_http_stream', False),
+                vlc_http_port=camera_config.get('vlc_http_port', 8554)
             )
             
             # Hubungkan ke kamera
