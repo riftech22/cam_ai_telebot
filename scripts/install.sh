@@ -32,8 +32,6 @@ apt install -y \
     pkg-config \
     libx11-dev \
     libgtk-3-dev \
-    libopencv-dev \
-    python3-opencv \
     libavcodec-dev \
     libavformat-dev \
     libswscale-dev \
@@ -48,7 +46,6 @@ apt install -y \
     libx264-dev \
     libx264-163 \
     yasm \
-    libjasper-dev \
     libopenexr-dev \
     libatlas-base-dev \
     wget \
