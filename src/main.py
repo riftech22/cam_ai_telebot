@@ -157,9 +157,20 @@ class CCTVTelebotApp:
                 config=self.config
             )
             
+            # Handle admin_id - convert to int if provided and valid
+            admin_id_str = self.telegram_config.get('admin_id')
+            if admin_id_str and admin_id_str != "YOUR_ADMIN_ID_HERE":
+                try:
+                    admin_id = int(admin_id_str)
+                except (ValueError, TypeError):
+                    self.logger.warning("admin_id tidak valid, menggunakan None")
+                    admin_id = None
+            else:
+                admin_id = None
+            
             self.bot_handler.initialize(
                 chat_id=int(self.telegram_config['chat_id']),
-                admin_id=int(self.telegram_config['admin_id']) if self.telegram_config.get('admin_id') else None
+                admin_id=admin_id
             )
             self.logger.info("Telegram bot diinisialisasi")
             

@@ -32,7 +32,8 @@ dlib==19.24.4
 onnxruntime==1.16.3
 
 # YOLOv8 untuk deteksi orang yang lebih akurat
-ultralytics==8.0.196
+# Updated to latest version for PyTorch 2.6+ compatibility
+ultralytics==8.1.0
 cvzone==1.6.1
 
 # Logging
