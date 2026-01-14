@@ -75,7 +75,7 @@ class BotHandler:
         
         Args:
             frame: Frame dari kamera
-            detected_persons: List orang yang terdeteksi
+            detected_persons: List orang yang terdeteksi (dari YOLOv8)
             recognized_faces: List wajah yang dikenali
             face_crops: List wajah yang di-crop untuk zoom (opsional)
         """
@@ -104,6 +104,7 @@ class BotHandler:
                 del self.frame_hashes[h]
             
             import cv2
+            import numpy as np
             import os
             from datetime import datetime
             
@@ -125,7 +126,7 @@ class BotHandler:
                 face_info = self.messages.FACE_DETECTED_INFO.format(face_list=face_list)
             
             message = self.messages.DETECTION_ALERT.format(
-                timestamp=current_time,
+                timestamp=current_time_formatted,
                 person_count=person_count,
                 face_info=face_info
             )
@@ -142,37 +143,49 @@ class BotHandler:
             # Hapus temporary file
             os.remove(temp_frame_path)
             
-            # Kirim zoom wajah jika ada
+            # Kirim zoom wajah dengan perbaikan - Gunakan person detection bbox
             if face_crops and len(face_crops) > 0:
+                self.logger.info(f"Mengirim {len(face_crops)} zoom wajah...")
+                
                 for i, (face_crop, bbox) in enumerate(face_crops):
-                    # Simpan zoom wajah
-                    temp_face_path = f"/tmp/face_zoom_{timestamp}_{i}.jpg"
-                    cv2.imwrite(temp_face_path, face_crop)
-                    
-                    # Kirim zoom wajah
-                    face_label = "Wajah Terdeteksi"
-                    face_distance = "N/A"
-                    
-                    if i < len(recognized_faces):
-                        face = recognized_faces[i]
-                        if face['status'] == 'known':
-                            face_label = f"👤 {face['display_name']}"
-                            face_distance = f"{face['distance']:.2f}"
-                        else:
-                            face_label = "❓ Wajah Tidak Dikenal"
-                            face_distance = "N/A"
-                    
-                    await self.application.bot.send_photo(
-                        chat_id=self.chat_id,
-                        photo=open(temp_face_path, 'rb'),
-                        caption=f"🔍 {face_label}\n📊 Distance: {face_distance}",
-                        parse_mode='Markdown'
-                    )
-                    
-                    self.logger.info(f"Zoom wajah #{i} terkirim")
-                    
-                    # Hapus temporary file
-                    os.remove(temp_face_path)
+                    try:
+                        # Verifikasi bahwa face_crop valid
+                        if face_crop is None or face_crop.size == 0:
+                            self.logger.warning(f"Zoom wajah #{i} skipped - face crop kosong/invalid")
+                            continue
+                        
+                        # Simpan zoom wajah
+                        temp_face_path = f"/tmp/face_zoom_{timestamp}_{i}.jpg"
+                        cv2.imwrite(temp_face_path, face_crop)
+                        
+                        # Kirim zoom wajah
+                        face_label = "Wajah Terdeteksi"
+                        face_distance = "N/A"
+                        bbox_info = f"Pos: {bbox}"
+                        
+                        if i < len(recognized_faces):
+                            face = recognized_faces[i]
+                            if face['status'] == 'known':
+                                face_label = f"👤 {face['display_name']}"
+                                face_distance = f"{face['distance']:.2f}"
+                            else:
+                                face_label = "❓ Wajah Tidak Dikenal"
+                        
+                        await self.application.bot.send_photo(
+                            chat_id=self.chat_id,
+                            photo=open(temp_face_path, 'rb'),
+                            caption=f"🔍 {face_label}\n📊 Distance: {face_distance}\n📍 BBox: {bbox_info}",
+                            parse_mode='Markdown'
+                        )
+                        
+                        self.logger.info(f"Zoom wajah #{i} terkirim - {face_label}")
+                        
+                        # Hapus temporary file
+                        os.remove(temp_face_path)
+                        
+                    except Exception as e:
+                        self.logger.error(f"Error kirim zoom wajah #{i}: {str(e)}")
+                        continue
             
             self.logger.info(f"Notifikasi deteksi terkirim ke {self.chat_id}")
             
