@@ -239,30 +239,25 @@ Website: www.riftech.com
     SETTINGS = """
 ⚙️ **Pengaturan Sistem**
 
-Pilih pengaturan yang ingin diubah:
+📋 **Pengaturan Aktif:**
 
-1. **Deteksi Orang** - {person_detection_status}
-   Command: /toggle_person_detection
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-2. **Pengenalan Wajah** - {face_recognition_status}
-   Command: /toggle_face_recognition
+1. **Deteksi Orang:** {person_detection_status}
+2. **Pengenalan Wajah:** {face_recognition_status}
+3. **Interval Deteksi:** {detection_interval} detik
+4. **Confidence Threshold:** {confidence}
+5. **Toleransi Wajah:** {tolerance}
 
-3. **Interval Deteksi** - {detection_interval} detik
-   Command: /set_detection_interval [detik]
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-4. **Confidence Threshold** - {confidence}
-   Command: /set_confidence [0.0-1.0]
+💡 **Tips:**
+• Gunakan /status untuk cek status lengkap
+• Gunakan /toggle_detection untuk on/off deteksi
+• Gunakan /addface [nama] untuk tambah wajah
 
-5. **Toleransi Pengenalan Wajah** - {tolerance}
-   Command: /set_tolerance [0.0-1.0]
-
-6. **Notifikasi Orang Dikenali** - {known_alert}
-   Command: /toggle_known_alert
-
-7. **Notifikasi Orang Tidak Dikenali** - {unknown_alert}
-   Command: /toggle_unknown_alert
-
-Gunakan perintah yang sesuai untuk mengubah pengaturan.
+━━━━━━━━━━━━━━━━━━━━━━━━
+*Developed by Riftech*
 """
     
     FACE_ADDED = """

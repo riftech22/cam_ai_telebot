@@ -14,7 +14,8 @@ class PersonDetector:
     """Kelas untuk mendeteksi orang menggunakan YOLOv8n"""
     
     def __init__(self, confidence_threshold: float = 0.5, model_size: str = "yolov8n", 
-                 max_cpu_cores: int = 3, inference_size: int = 320):
+                 max_cpu_cores: int = 3, inference_size: int = 320, 
+                 detect_all_objects: bool = True, specific_classes: list = None):
         """
         Inisialisasi Person Detector dengan YOLOv8n
         
@@ -23,13 +24,40 @@ class PersonDetector:
             model_size: Ukuran model YOLO (yolov8n, yolov8s, yolov8m, yolov8l, yolov8x)
             max_cpu_cores: Maximum CPU cores untuk inference (default: 3)
             inference_size: Ukuran input image untuk inference (default: 320)
+            detect_all_objects: True untuk detect semua objek, False hanya specific_classes (default: True)
+            specific_classes: List class IDs untuk detect (jika detect_all_objects=False)
+                COCO classes:
+                0: person, 1: bicycle, 2: car, 3: motorcycle, 5: bus, 7: truck
         """
         self.confidence_threshold = confidence_threshold
         self.model_size = model_size
         self.max_cpu_cores = max_cpu_cores
         self.inference_size = inference_size
+        self.detect_all_objects = detect_all_objects
+        self.specific_classes = specific_classes
+        
+        # COCO dataset class IDs
+        self.person_class_id = 0  # ID class 'person'
+        self.motorcycle_class_id = 2  # ID class 'motorcycle' (car)
+        self.bicycle_class_id = 1  # ID class 'bicycle'
+        self.car_class_id = 2  # ID class 'car'
+        self.bus_class_id = 5  # ID class 'bus'
+        self.truck_class_id = 7  # ID class 'truck'
+        
+        # Common vehicle classes for motion detection
+        self.vehicle_classes = [self.person_class_id, self.bicycle_class_id, 
+                             self.car_class_id, self.motorcycle_class_id, 
+                             self.bus_class_id, self.truck_class_id]
+        
+        # Class yang akan dideteksi
+        if detect_all_objects:
+            self.target_classes = None  # Detect all 80 classes
+        elif specific_classes:
+            self.target_classes = specific_classes
+        else:
+            self.target_classes = self.vehicle_classes  # Default: detect persons and vehicles
+        
         self.model = None
-        self.person_class_id = 0  # ID class 'person' di COCO dataset
         self.logger = logging.getLogger(__name__)
         
         # Optimasi CPU: Batasi jumlah threads
