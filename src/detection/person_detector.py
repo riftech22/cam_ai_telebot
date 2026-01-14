@@ -88,34 +88,52 @@ class PersonDetector:
             return []
         
         try:
+            self.logger.debug(f"Starting person detection with confidence threshold: {self.confidence_threshold}")
+            self.logger.debug(f"Frame shape: {frame.shape}")
+            
             # Jalankan inference dengan YOLO
             results = self.model(frame, verbose=verbose, conf=self.confidence_threshold)
             
+            self.logger.debug(f"YOLO inference completed, {len(results)} result(s)")
+            
             # Ekstrak deteksi orang
             detections = []
+            total_boxes = 0
+            person_boxes = 0
             
             for result in results:
                 boxes = result.boxes
-                for box in boxes:
-                    # Filter hanya class 'person' (class_id = 0)
-                    if int(box.cls) == self.person_class_id:
-                        # Dapatkan koordinat bounding box
-                        x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                if boxes is not None:
+                    total_boxes = len(boxes)
+                    self.logger.debug(f"Total boxes detected: {total_boxes}")
+                    
+                    for i, box in enumerate(boxes):
+                        class_id = int(box.cls)
                         confidence = float(box.conf[0])
+                        self.logger.debug(f"Box {i}: class_id={class_id}, confidence={confidence:.3f}")
                         
-                        # Convert ke (x, y, w, h) format
-                        x = int(x1)
-                        y = int(y1)
-                        w = int(x2 - x1)
-                        h = int(y2 - y1)
-                        
-                        detections.append((x, y, w, h, confidence))
+                        # Filter hanya class 'person' (class_id = 0)
+                        if class_id == self.person_class_id:
+                            # Dapatkan koordinat bounding box
+                            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                            
+                            # Convert ke (x, y, w, h) format
+                            x = int(x1)
+                            y = int(y1)
+                            w = int(x2 - x1)
+                            h = int(y2 - y1)
+                            
+                            detections.append((x, y, w, h, confidence))
+                            person_boxes += 1
+                            self.logger.info(f"Person detected at ({x},{y}) size: {w}x{h}, confidence: {confidence:.3f}")
+            
+            self.logger.info(f"Detection summary: {total_boxes} total boxes, {person_boxes} persons, confidence threshold: {self.confidence_threshold}")
             
             # YOLO sudah memiliki NMS built-in, jadi tidak perlu tambahan
             return detections
             
         except Exception as e:
-            self.logger.error(f"Error mendeteksi orang: {str(e)}")
+            self.logger.error(f"Error mendeteksi orang: {str(e)}", exc_info=True)
             return []
     
     
