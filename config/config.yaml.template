@@ -51,11 +51,20 @@ motion_detection:
 
 # Konfigurasi Notifikasi
 notification:
-  send_on_motion: true              # Kirim notifikasi saat ada gerakan
-  send_on_person: true               # Kirim notifikasi saat ada orang
+  send_on_motion: true                    # Kirim notifikasi saat ada gerakan
+  send_on_person: true                     # Kirim notifikasi saat ada orang
   send_on_unknown_face: true
-  include_motion_mask: true          # Sertakan mask gerakan di foto
-  person_detection_cooldown: 5        # Jeda setiap notifikasi deteksi orang (detik) - 5 detik = real-time tapi tidak spam
+  include_motion_mask: true                # Sertakan mask gerakan di foto
+  person_detection_cooldown: 5              # Jeda setiap notifikasi deteksi orang (detik) - 5 detik = real-time tapi tidak spam
+  duplicate_threshold_seconds: 5             # Jeda untuk menganggap frame duplicate (detik) - Mencegah foto sama dikirim berulang
+  
+# PREVENT DUPLICATE PHOTOS:
+# Sistem menggunakan frame hash untuk mencegah foto sama dikirim berulang
+# - duplicate_threshold_seconds: Jika hash frame sama muncul dalam X detik, skip notifikasi
+# - Default: 5 detik (frame sama dalam 5 detik dianggap duplicate)
+# - Set 0 untuk disable (berisiko spam banyak foto sama)
+# - Set 2-3 untuk lebih strict (lebih banyak foto, tapi mungkin skip beberapa)
+# - Set 10 untuk lebih loose (lebih sedikit duplicate, tapi lebih real-time)
   
 # MODE NOTIFIKASI:
 # Real-time (Cepat):

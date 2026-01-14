@@ -4,10 +4,32 @@ Bot Handler - Handler utama untuk Telegram Bot
 
 import logging
 import asyncio
+import hashlib
+import time
 from telegram import Bot
 from telegram.ext import Application, ContextTypes
 from .commands import BotCommands
 from .messages import Messages
+
+
+def calculate_frame_hash(frame):
+    """
+    Hitung hash frame untuk deteksi duplicate
+    
+    Args:
+        frame: Frame dari kamera (numpy array)
+    
+    Returns:
+        String hash dari frame
+    """
+    import cv2
+    # Resize ke kecil untuk kecepatan
+    small_frame = cv2.resize(frame, (100, 100))
+    # Convert ke grayscale
+    gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
+    # Hitung hash
+    hash_obj = hashlib.md5(gray.tobytes())
+    return hash_obj.hexdigest()
 
 
 class BotHandler:
@@ -43,6 +65,10 @@ class BotHandler:
         self.chat_id = None
         self.admin_id = None
         
+        # Frame hash cache untuk mencegah duplicate
+        self.frame_hashes = {}  # {hash: timestamp}
+        self.duplicate_threshold = config.get('notification', {}).get('duplicate_threshold_seconds', 5)
+        
     async def send_detection_alert(self, frame, detected_persons, recognized_faces, face_crops=None):
         """
         Kirim notifikasi deteksi ke Telegram dengan zoom wajah
@@ -58,12 +84,31 @@ class BotHandler:
                 self.logger.warning("Chat ID tidak tersedia")
                 return
             
+            # Cek duplicate frame
+            frame_hash = calculate_frame_hash(frame)
+            current_time = time.time()
+            
+            # Cek apakah hash sudah ada dalam threshold
+            if frame_hash in self.frame_hashes:
+                last_time = self.frame_hashes[frame_hash]
+                if current_time - last_time < self.duplicate_threshold:
+                    self.logger.info(f"Detection alert skipped - duplicate frame (hash: {frame_hash[:8]}...)")
+                    return  # Skip duplicate
+            
+            # Update hash cache
+            self.frame_hashes[frame_hash] = current_time
+            
+            # Bersihkan hash lama (lebih dari 5 menit)
+            old_hashes = [h for h, t in self.frame_hashes.items() if current_time - t > 300]
+            for h in old_hashes:
+                del self.frame_hashes[h]
+            
             import cv2
             import os
             from datetime import datetime
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            current_time_formatted = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             person_count = len(detected_persons)
             
             # Kirim foto full frame dulu (SEGERA)
@@ -297,19 +342,38 @@ class BotHandler:
                 self.logger.warning("Chat ID tidak tersedia")
                 return
             
+            # Cek duplicate frame
+            frame_hash = calculate_frame_hash(frame)
+            current_time = time.time()
+            
+            # Cek apakah hash sudah ada dalam threshold
+            if frame_hash in self.frame_hashes:
+                last_time = self.frame_hashes[frame_hash]
+                if current_time - last_time < self.duplicate_threshold:
+                    self.logger.info(f"Motion alert skipped - duplicate frame (hash: {frame_hash[:8]}...)")
+                    return  # Skip duplicate
+            
+            # Update hash cache
+            self.frame_hashes[frame_hash] = current_time
+            
+            # Bersihkan hash lama (lebih dari 5 menit)
+            old_hashes = [h for h, t in self.frame_hashes.items() if current_time - t > 300]
+            for h in old_hashes:
+                del self.frame_hashes[h]
+            
             import cv2
             import os
             from datetime import datetime
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            current_time_formatted = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             # Kirim foto frame
             temp_path = f"/tmp/motion_{timestamp}.jpg"
             cv2.imwrite(temp_path, frame)
             
             message = f"📹 *MOTION DETECTED*\n\n" \
-                     f"📅 Waktu: {current_time}\n" \
+                     f"📅 Waktu: {current_time_formatted}\n" \
                      f"📊 Perubahan: {motion_percentage:.2f}%\n" \
                      f"📍 Kamera: {self.camera.ip}\n\n" \
                      f"Aktivitas terdeteksi dalam frame kamera."
