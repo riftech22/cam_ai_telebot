@@ -240,7 +240,8 @@ class CCTVTelebotApp:
                             if len(detected_persons) > 0:
                                 self.logger.info(f"Terdeteksi {len(detected_persons)} orang")
                                 
-                                # Deteksi wajah
+                                # Deteksi wajah untuk zoom
+                                face_crops = []
                                 recognized_faces = []
                                 if self.config['detection']['face_recognition_enabled']:
                                     faces = self.face_detector.detect_and_crop_faces(frame)
@@ -248,6 +249,7 @@ class CCTVTelebotApp:
                                     if len(faces) > 0:
                                         face_images = [face[0] for face in faces]
                                         recognized_faces = self.face_recognition.recognize_faces(face_images)
+                                        face_crops = faces  # (cropped_face, bbox, confidence)
                                 
                                 # Update statistik
                                 if self.bot_handler.get_commands_instance():
@@ -259,13 +261,17 @@ class CCTVTelebotApp:
                                         else:
                                             stats['unknown'] += 1
                                     
-                                # Kirim notifikasi
+                                # Kirim notifikasi SEGERA tanpa delay
                                 self.logger.info("Sending detection alert to Telegram...")
                                 await self.bot_handler.send_detection_alert(
                                     frame,
                                     detected_persons,
-                                    recognized_faces
+                                    recognized_faces,
+                                    face_crops  # Tambahkan face crops untuk zoom
                                 )
+                                
+                                # Reset timer agar deteksi berikutnya tidak perlu tunggu lama
+                                last_detection_time = current_time
                         else:
                             self.logger.debug("Person detection is disabled")
                         

@@ -43,35 +43,34 @@ class BotHandler:
         self.chat_id = None
         self.admin_id = None
         
-    async def send_detection_alert(self, frame, detected_persons, recognized_faces):
+    async def send_detection_alert(self, frame, detected_persons, recognized_faces, face_crops=None):
         """
-        Kirim notifikasi deteksi ke Telegram
+        Kirim notifikasi deteksi ke Telegram dengan zoom wajah
         
         Args:
             frame: Frame dari kamera
             detected_persons: List orang yang terdeteksi
             recognized_faces: List wajah yang dikenali
+            face_crops: List wajah yang di-crop untuk zoom (opsional)
         """
         try:
             if not self.chat_id:
                 self.logger.warning("Chat ID tidak tersedia")
                 return
             
-            # Simpan frame ke temporary file
             import cv2
             import os
             from datetime import datetime
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            temp_path = f"/tmp/detection_{timestamp}.jpg"
-            cv2.imwrite(temp_path, frame)
-            
-            # Buat pesan
-            from datetime import datetime
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             person_count = len(detected_persons)
             
-            # Info wajah yang terdeteksi
+            # Kirim foto full frame dulu (SEGERA)
+            temp_frame_path = f"/tmp/detection_{timestamp}.jpg"
+            cv2.imwrite(temp_frame_path, frame)
+            
+            # Buat pesan
             face_info = ""
             if recognized_faces and len(recognized_faces) > 0:
                 face_list = "\n".join([
@@ -86,21 +85,50 @@ class BotHandler:
                 face_info=face_info
             )
             
-            # Kirim pesan dan foto
+            # Kirim foto full frame dengan caption
             await self.application.bot.send_photo(
                 chat_id=self.chat_id,
-                photo=open(temp_path, 'rb'),
+                photo=open(temp_frame_path, 'rb'),
                 caption=message,
                 parse_mode='Markdown'
             )
+            self.logger.info(f"Foto full frame terkirim ke {self.chat_id}")
             
             # Hapus temporary file
-            os.remove(temp_path)
+            os.remove(temp_frame_path)
+            
+            # Kirim zoom wajah jika ada
+            if face_crops and len(face_crops) > 0:
+                for i, (face_crop, bbox, confidence) in enumerate(face_crops):
+                    # Simpan zoom wajah
+                    temp_face_path = f"/tmp/face_zoom_{timestamp}_{i}.jpg"
+                    cv2.imwrite(temp_face_path, face_crop)
+                    
+                    # Kirim zoom wajah
+                    face_label = "Wajah Terdeteksi"
+                    if i < len(recognized_faces):
+                        face = recognized_faces[i]
+                        if face['status'] == 'known':
+                            face_label = f"👤 {face['display_name']}"
+                        else:
+                            face_label = "❓ Wajah Tidak Dikenal"
+                    
+                    await self.application.bot.send_photo(
+                        chat_id=self.chat_id,
+                        photo=open(temp_face_path, 'rb'),
+                        caption=f"🔍 {face_label}\n📊 Confidence: {confidence:.2f}",
+                        parse_mode='Markdown'
+                    )
+                    
+                    self.logger.info(f"Zoom wajah #{i} terkirim")
+                    
+                    # Hapus temporary file
+                    os.remove(temp_face_path)
             
             self.logger.info(f"Notifikasi deteksi terkirim ke {self.chat_id}")
             
         except Exception as e:
-            self.logger.error(f"Error kirim notifikasi deteksi: {str(e)}")
+            self.logger.error(f"Error kirim notifikasi deteksi: {str(e)}", exc_info=True)
     
     async def send_camera_disconnected_alert(self):
         """Kirim notifikasi kamera terputus"""
