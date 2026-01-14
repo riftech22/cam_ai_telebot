@@ -37,6 +37,21 @@ fi
 echo "✅ VLC terinstall: $(vlc --version | head -1)"
 echo ""
 
+# Buat VLC user untuk menjalankan service
+echo "=========================================="
+echo "MEMBUAT VLC USER"
+echo "=========================================="
+echo ""
+
+if ! id "vlc-user" &>/dev/null; then
+    sudo useradd -r -s /bin/false vlc-user
+    echo "✅ VLC user created: vlc-user"
+else
+    echo "✅ VLC user already exists: vlc-user"
+fi
+
+echo ""
+
 # Buat systemd service
 echo "=========================================="
 echo "MEMBUAT SYSTEMD SERVICE"
@@ -52,7 +67,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=vlc-user
+Group=vlc-user
 Restart=always
 RestartSec=10
 Environment="CAMERA_IP=$CAMERA_IP"
