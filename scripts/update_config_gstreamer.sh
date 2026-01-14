@@ -31,15 +31,22 @@ sed -i 's/use_vlc_proxy: .*true$/use_vlc_proxy: false/' "$CONFIG_FILE"
 sed -i 's/use_http_stream: true/use_http_stream: false/g' "$CONFIG_FILE"
 sed -i 's/use_http_stream: .*true$/use_http_stream: false/' "$CONFIG_FILE"
 
-# Tambah use_gstreamer_proxy jika belum ada
+# Tambah use_gstreamer_proxy dan gstreamer_rtsp_port jika belum ada
 if ! grep -q "use_gstreamer_proxy:" "$CONFIG_FILE"; then
-    echo "Menambahkan use_gstreamer_proxy: true"
-    sed -i '/vlc_http_port:/a \  use_gstreamer_proxy: true' "$CONFIG_FILE"
-    sed -i '/use_gstreamer_proxy:/a \  gstreamer_rtsp_port: 8554' "$CONFIG_FILE"
+    echo "Menambahkan use_gstreamer_proxy: true dan gstreamer_rtsp_port: 8554"
+    sed -i '/vlc_rtsp_path:/a\  use_http_stream: false  # Tidak dipakai lagi' "$CONFIG_FILE"
+    sed -i '/use_http_stream: false  # Tidak dipakai lagi/a\  use_gstreamer_proxy: true  # Gunakan GStreamer RTSP proxy' "$CONFIG_FILE"
+    sed -i '/use_gstreamer_proxy: true  # Gunakan GStreamer RTSP proxy/a\  gstreamer_rtsp_port: 8554  # Local RTSP port dari GStreamer proxy' "$CONFIG_FILE"
 else
     # Update jika sudah ada
     sed -i 's/use_gstreamer_proxy: .*false$/use_gstreamer_proxy: true/' "$CONFIG_FILE"
     sed -i 's/use_gstreamer_proxy: .*$/use_gstreamer_proxy: true/' "$CONFIG_FILE"
+    
+    # Pastikan gstreamer_rtsp_port ada
+    if ! grep -q "gstreamer_rtsp_port:" "$CONFIG_FILE"; then
+        echo "Menambahkan gstreamer_rtsp_port: 8554"
+        sed -i '/use_gstreamer_proxy:/a \  gstreamer_rtsp_port: 8554' "$CONFIG_FILE"
+    fi
 fi
 
 echo "✅ Config berhasil diupdate!"
