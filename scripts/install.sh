@@ -53,26 +53,12 @@ apt install -y \
     git \
     unzip
 
-# Install dlib
-echo "[3/8] Menginstall dlib untuk face recognition..."
-cd /tmp
-wget http://dlib.net/files/dlib-19.24.2.tar.bz2
-tar xvf dlib-19.24.2.tar.bz2
-cd dlib-19.24.2
-mkdir build
-cd build
-cmake ..
-cmake --build .
-cmake --build . --target install
-cd /tmp
-rm -rf dlib-19.24.2*
-
-# Install boost python
-echo "[4/8] Menginstall boost-python..."
+# Install boost python (needed for dlib)
+echo "[3/8] Menginstall boost-python..."
 apt install -y libboost-python-dev
 
 # Buat virtual environment
-echo "[5/8] Membuat virtual environment..."
+echo "[4/8] Membuat virtual environment..."
 cd /home/riftech/projeck/cam_ai_telebot
 python3 -m venv venv
 
@@ -80,15 +66,15 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Upgrade pip
-echo "[6/8] Mengupgrade pip..."
+echo "[5/8] Mengupgrade pip..."
 pip install --upgrade pip
 
-# Install Python packages
-echo "[7/8] Menginstall Python packages..."
+# Install Python packages (dlib included)
+echo "[6/8] Menginstall Python packages..."
 pip install -r requirements.txt
 
 # Download YOLOv8n model (akan otomatis dilakukan saat pertama kali dijalankan)
-echo "[8/8] Model YOLOv8n akan didownload otomatis saat aplikasi dijalankan pertama kali"
+echo "[7/7] Model YOLOv8n akan didownload otomatis saat aplikasi dijalankan pertama kali"
 
 # Setup konfigurasi
 echo ""
