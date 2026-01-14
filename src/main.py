@@ -190,35 +190,52 @@ class CCTVTelebotApp:
         last_camera_check = time.time()
         camera_check_interval = 30  # Cek kamera setiap 30 detik
         
+        frame_count = 0  # Counter untuk debug
+        
         while self.running:
             try:
                 current_time = time.time()
+                frame_count += 1
+                
+                # Log setiap 30 detik untuk memastikan loop berjalan
+                if frame_count % 300 == 0:
+                    self.logger.info(f"Detection loop running... Frame count: {frame_count}")
                 
                 # Cek status kamera
                 if current_time - last_camera_check >= camera_check_interval:
+                    self.logger.debug("Checking camera connection...")
                     if not self.camera.check_connection():
                         self.logger.warning("Kamera terputus, mencoba reconnect...")
                         await self.bot_handler.send_camera_disconnected_alert()
                         
                         if self.camera.reconnect():
                             await self.bot_handler.send_camera_reconnected_alert()
+                    else:
+                        self.logger.debug("Camera connection OK")
                     
                     last_camera_check = current_time
                 
                 # Cek apakah deteksi aktif
                 if not self.config['detection']['enabled']:
+                    self.logger.debug("Detection is disabled in config, skipping...")
                     await asyncio.sleep(1)
                     continue
                 
                 # Cek interval deteksi
                 if current_time - last_detection_time >= detection_interval:
+                    self.logger.debug(f"Attempting to read frame... (frame #{frame_count})")
+                    
                     # Baca frame dari kamera
                     ret, frame = self.camera.read_frame()
                     
                     if ret and frame is not None:
+                        self.logger.debug(f"Frame read successfully: {frame.shape}")
+                        
                         # Deteksi orang
                         if self.config['detection']['person_detection_enabled']:
+                            self.logger.debug("Starting person detection...")
                             detected_persons = self.person_detector.detect_persons(frame)
+                            self.logger.info(f"Person detection result: {len(detected_persons)} persons detected")
                             
                             if len(detected_persons) > 0:
                                 self.logger.info(f"Terdeteksi {len(detected_persons)} orang")
@@ -242,20 +259,25 @@ class CCTVTelebotApp:
                                         else:
                                             stats['unknown'] += 1
                                     
-                                    # Kirim notifikasi
-                                    await self.bot_handler.send_detection_alert(
-                                        frame,
-                                        detected_persons,
-                                        recognized_faces
-                                    )
+                                # Kirim notifikasi
+                                self.logger.info("Sending detection alert to Telegram...")
+                                await self.bot_handler.send_detection_alert(
+                                    frame,
+                                    detected_persons,
+                                    recognized_faces
+                                )
+                        else:
+                            self.logger.debug("Person detection is disabled")
                         
                         last_detection_time = current_time
+                    else:
+                        self.logger.warning(f"Failed to read frame (ret={ret}, frame={frame is not None})")
                 
                 # Tunggu sebentar sebelum loop berikutnya
                 await asyncio.sleep(0.1)
                 
             except Exception as e:
-                self.logger.error(f"Error dalam loop deteksi: {str(e)}")
+                self.logger.error(f"Error dalam loop deteksi: {str(e)}", exc_info=True)
                 await asyncio.sleep(1)
     
     async def run(self):
