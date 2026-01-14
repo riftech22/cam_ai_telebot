@@ -8,6 +8,18 @@ camera:
   password: "Kuncong0203"
   rtsp_port: 554
   stream_url: "/1"
+  
+  # Camera Connection Settings
+  buffer_size: 3          # Buffer size untuk stabilitas (1-5, default: 3)
+  fps: 15                  # Target FPS untuk streaming (10-30, default: 15)
+  timeout: 10              # Timeout koneksi dalam detik (5-30, default: 10)
+  max_retries: 5           # Maksimal percobaan reconnect (1-10, default: 5)
+  
+  # Camera Connection Tips:
+  # - buffer_size: 3 untuk stabilitas, 1 untuk latency rendah
+  # - fps: 15 untuk balanced, 10 untuk lebih stabil, 30 untuk lebih cepat
+  # - timeout: 10 untuk koneksi normal, 5 untuk cepat, 30 untuk kamera jauh
+  # - max_retries: 5 untuk balanced, 3 untuk cepat reconnect, 10 untuk koneksi buruk
 
 # Untuk multi-camera, ganti dengan format ini:
 # cameras:

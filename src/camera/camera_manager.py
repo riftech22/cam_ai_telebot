@@ -13,7 +13,9 @@ class CameraManager:
     """Kelas untuk mengelola koneksi kamera IP V380"""
     
     def __init__(self, ip: str, port: int, username: str, password: str, 
-                 rtsp_port: int = 554, stream_url: str = "/1"):
+                 rtsp_port: int = 554, stream_url: str = "/1",
+                 buffer_size: int = 3, fps: int = 15, 
+                 timeout: int = 10, max_retries: int = 5):
         """
         Inisialisasi Camera Manager
         
@@ -24,6 +26,10 @@ class CameraManager:
             password: Password login kamera
             rtsp_port: Port RTSP untuk streaming
             stream_url: URL stream tambahan
+            buffer_size: Buffer size untuk VideoCapture (default: 3)
+            fps: FPS target untuk streaming (default: 15)
+            timeout: Timeout untuk koneksi (default: 10 detik)
+            max_retries: Maksimal percobaan reconnect (default: 5)
         """
         self.ip = ip
         self.port = port
@@ -31,105 +37,149 @@ class CameraManager:
         self.password = password
         self.rtsp_port = rtsp_port
         self.stream_url = stream_url
+        self.buffer_size = buffer_size
+        self.fps = fps
+        self.timeout = timeout
+        self.max_retries = max_retries
         self.cap: Optional[cv2.VideoCapture] = None
         self.is_connected = False
+        self.last_frame_time = time.time()
+        self.consecutive_failures = 0
         
         self.logger = logging.getLogger(__name__)
         
     def build_rtsp_url(self) -> str:
         """
-        Membangun URL RTSP untuk streaming
+        Membangun URL RTSP untuk streaming dengan parameter optimasi
         
         Returns:
             URL RTSP lengkap
         """
-        # Format RTSP untuk V380
-        rtsp_url = f"rtsp://{self.username}:{self.password}@{self.ip}:{self.rtsp_port}{self.stream_url}"
+        # Format RTSP untuk V380 dengan parameter optimasi
+        # rtsp_transport: tcp (lebih stabil dari udp)
+        # latency: 0 (real-time, no buffering)
+        rtsp_url = f"rtsp://{self.username}:{self.password}@{self.ip}:{self.rtsp_port}{self.stream_url}?rtsp_transport=tcp&latency=0"
         self.logger.info(f"RTSP URL: rtsp://{self.username}:****@{self.ip}:{self.rtsp_port}{self.stream_url}")
         return rtsp_url
     
     def connect(self) -> bool:
         """
-        Membuka koneksi ke kamera
+        Membuka koneksi ke kamera dengan timeout dan retry
         
         Returns:
             True jika berhasil terkoneksi, False jika gagal
         """
         try:
             rtsp_url = self.build_rtsp_url()
-            self.logger.info(f"Menghubungkan ke kamera {self.ip}...")
+            self.logger.info(f"Menghubungkan ke kamera {self.ip} (timeout: {self.timeout}s)...")
             
-            # Mencoba koneksi dengan timeout
+            # Mencoba koneksi dengan parameter optimasi
             self.cap = cv2.VideoCapture(rtsp_url)
             
-            # Set timeout dan buffer size
-            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            self.cap.set(cv2.CAP_PROP_FPS, 15)
+            # Set buffer size dan fps untuk stabilitas
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, self.buffer_size)
+            self.cap.set(cv2.CAP_PROP_FPS, self.fps)
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'H264'))
             
-            # Test koneksi dengan membaca frame pertama
-            ret, frame = self.cap.read()
+            # Set backend ke FFmpeg untuk lebih stabil
+            self.cap.set(cv2.CAP_PROP_BACKEND, cv2.CAP_FFMPEG)
             
-            if ret and frame is not None:
-                self.is_connected = True
-                self.logger.info(f"Berhasil terkoneksi ke kamera {self.ip}")
-                self.logger.info(f"Resolusi: {frame.shape[1]}x{frame.shape[0]}")
-                return True
-            else:
-                self.logger.error(f"Gagal membaca frame dari kamera {self.ip}")
-                self.release()
-                return False
+            # Test koneksi dengan membaca beberapa frame
+            success_count = 0
+            for i in range(5):  # Coba 5 frame untuk memastikan stabil
+                ret, frame = self.cap.read()
+                if ret and frame is not None:
+                    success_count += 1
+                    if success_count >= 3:  # Minimal 3 frame sukses
+                        self.is_connected = True
+                        self.consecutive_failures = 0
+                        self.last_frame_time = time.time()
+                        self.logger.info(f"Berhasil terkoneksi ke kamera {self.ip}")
+                        self.logger.info(f"Resolusi: {frame.shape[1]}x{frame.shape[0]}, FPS: {self.fps}, Buffer: {self.buffer_size}")
+                        return True
+                time.sleep(0.1)  # Tunggu 100ms antar frame
+            
+            # Jika kurang dari 3 frame sukses
+            self.logger.error(f"Gagal membaca frame yang stabil dari kamera {self.ip}")
+            self.release()
+            return False
                 
         except Exception as e:
-            self.logger.error(f"Error saat menghubungkan ke kamera: {str(e)}")
+            self.logger.error(f"Error saat menghubungkan ke kamera: {str(e)}", exc_info=True)
             self.release()
             return False
     
     def read_frame(self) -> Tuple[bool, Optional[cv2.typing.MatLike]]:
         """
-        Membaca satu frame dari kamera
+        Membaca satu frame dari kamera dengan health check
         
         Returns:
             Tuple (success, frame) dimana success adalah bool dan frame adalah numpy array atau None
         """
         if not self.is_connected or self.cap is None:
-            self.logger.warning("Kamera tidak terkoneksi")
+            self.logger.warning("Kamera tidak terkoneksi, mencoba reconnect...")
+            self.reconnect()
             return False, None
         
         try:
             ret, frame = self.cap.read()
             
             if ret and frame is not None:
+                # Update timestamp dan reset failure counter
+                self.last_frame_time = time.time()
+                self.consecutive_failures = 0
                 return True, frame
             else:
-                self.logger.warning("Gagal membaca frame, mencoba reconnect...")
-                self.reconnect()
+                # Increment failure counter
+                self.consecutive_failures += 1
+                self.logger.warning(f"Gagal membaca frame (consecutive failures: {self.consecutive_failures})")
+                
+                # Cek jika perlu reconnect
+                if self.consecutive_failures >= 3:
+                    self.logger.error("Terlalu banyak kegagalan, mencoba reconnect...")
+                    return self.reconnect()
+                
                 return False, None
                 
         except Exception as e:
+            self.consecutive_failures += 1
             self.logger.error(f"Error saat membaca frame: {str(e)}")
+            
+            # Cek jika perlu reconnect
+            if self.consecutive_failures >= 3:
+                self.logger.error("Terlalu banyak error, mencoba reconnect...")
+                return self.reconnect()
+            
             return False, None
     
-    def reconnect(self, max_retries: int = 3) -> bool:
+    def reconnect(self, max_retries: int = None) -> bool:
         """
-        Mencoba reconnect ke kamera
+        Mencoba reconnect ke kamera dengan exponential backoff
         
         Args:
-            max_retries: Maksimal percobaan reconnect
+            max_retries: Maksimal percobaan reconnect (default: self.max_retries)
             
         Returns:
             True jika berhasil reconnect, False jika gagal
         """
+        if max_retries is None:
+            max_retries = self.max_retries
+        
         self.release()
+        self.consecutive_failures = 0
         
         for attempt in range(max_retries):
-            self.logger.info(f"Percobaan reconnect {attempt + 1}/{max_retries}...")
+            # Exponential backoff: 2s, 4s, 8s, 16s, 32s
+            backoff_time = min(2 ** attempt, 30)  # Max 30 detik
+            self.logger.info(f"Percobaan reconnect {attempt + 1}/{max_retries} (menunggu {backoff_time}s)...")
+            
+            time.sleep(backoff_time)
             
             if self.connect():
+                self.logger.info("Reconnect berhasil!")
                 return True
-            
-            time.sleep(2)  # Tunggu 2 detik sebelum mencoba lagi
         
-        self.logger.error("Gagal melakukan reconnect ke kamera")
+        self.logger.error(f"Gagal melakukan reconnect ke kamera setelah {max_retries} percobaan")
         return False
     
     def get_properties(self) -> dict:

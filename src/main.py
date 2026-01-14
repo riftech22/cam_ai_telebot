@@ -177,7 +177,11 @@ class CCTVTelebotApp:
                 username=camera_config['username'],
                 password=camera_config['password'],
                 rtsp_port=camera_config.get('rtsp_port', 554),
-                stream_url=camera_config.get('stream_url', '/1')
+                stream_url=camera_config.get('stream_url', '/1'),
+                buffer_size=camera_config.get('buffer_size', 3),
+                fps=camera_config.get('fps', 15),
+                timeout=camera_config.get('timeout', 10),
+                max_retries=camera_config.get('max_retries', 5)
             )
             
             # Hubungkan ke kamera
