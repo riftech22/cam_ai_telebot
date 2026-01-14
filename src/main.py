@@ -288,7 +288,10 @@ class CCTVTelebotApp:
                             detected_persons = self.person_detector.detect_persons(frame)
                             self.logger.info(f"Person detection result: {len(detected_persons)} persons detected")
                             
-                            if len(detected_persons) > 0:
+                            # Cek cooldown untuk mencegah spam notifikasi
+                            person_cooldown = self.config.get('notification', {}).get('person_detection_cooldown', 30)
+                            
+                            if len(detected_persons) > 0 and current_time - self.last_person_detection_time >= person_cooldown:
                                 self.logger.info(f"Terdeteksi {len(detected_persons)} orang")
                                 
                                 # Deteksi wajah untuk zoom

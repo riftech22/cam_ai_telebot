@@ -51,10 +51,11 @@ motion_detection:
 
 # Konfigurasi Notifikasi
 notification:
-  send_on_motion: true     # Kirim notifikasi saat ada gerakan
-  send_on_person: true      # Kirim notifikasi saat ada orang
+  send_on_motion: true              # Kirim notifikasi saat ada gerakan
+  send_on_person: true               # Kirim notifikasi saat ada orang
   send_on_unknown_face: true
-  include_motion_mask: false # Sertakan mask gerakan di foto
+  include_motion_mask: true          # Sertakan mask gerakan di foto
+  person_detection_cooldown: 30        # Jeda setiap notifikasi deteksi orang (detik) - mencegah spam
   
 # Konfigurasi Recording
 recording:
