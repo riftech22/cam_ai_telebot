@@ -121,8 +121,16 @@ class CCTVTelebotApp:
         try:
             self.logger.info("Menginisialisasi komponen sistem...")
             
-            # Kamera
-            camera_config = self.config['camera']
+            # Kamera - support old format (camera) and new format (cameras)
+            camera_config = None
+            if 'camera' in self.config:
+                camera_config = self.config['camera']
+            elif 'cameras' in self.config and len(self.config['cameras']) > 0:
+                camera_config = self.config['cameras'][0]  # Ambil kamera pertama
+            
+            if camera_config is None:
+                raise Exception("Konfigurasi kamera tidak ditemukan")
+            
             self.camera = CameraManager(
                 ip=camera_config['ip'],
                 port=camera_config['port'],

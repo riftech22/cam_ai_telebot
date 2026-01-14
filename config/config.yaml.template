@@ -1,27 +1,35 @@
 # Konfigurasi CCTV AI Telegram Bot
 
-# Konfigurasi Kamera
-cameras:
-  - id: 1
-    name: "CCTV Utama"
-    ip: "10.26.27.196"
-    port: 80
-    username: "admin"
-    password: "Kuncong0203"
-    rtsp_port: 554
-    stream_url: "/1"
-    enabled: true
-    
-  # Tambahkan kamera tambahan seperti ini:
-  # - id: 2
-  #   name: "CCTV Belakang"
-  #   ip: "10.26.27.197"
-  #   port: 80
-  #   username: "admin"
-  #   password: "password"
-  #   rtsp_port: 554
-  #   stream_url: "/1"
-  #   enabled: true
+# Konfigurasi Kamera (Single Camera - Backward Compatible)
+camera:
+  ip: "10.26.27.196"
+  port: 80
+  username: "admin"
+  password: "Kuncong0203"
+  rtsp_port: 554
+  stream_url: "/1"
+
+# Untuk multi-camera, ganti dengan format ini:
+# cameras:
+#   - id: 1
+#     name: "CCTV Utama"
+#     ip: "10.26.27.196"
+#     port: 80
+#     username: "admin"
+#     password: "Kuncong0203"
+#     rtsp_port: 554
+#     stream_url: "/1"
+#     enabled: true
+#   
+#   - id: 2
+#     name: "CCTV Belakang"
+#     ip: "10.26.27.197"
+#     port: 80
+#     username: "admin"
+#     password: "password"
+#     rtsp_port: 554
+#     stream_url: "/1"
+#     enabled: true
 
 # Konfigurasi Deteksi
 detection:
