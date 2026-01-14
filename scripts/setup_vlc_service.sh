@@ -78,7 +78,6 @@ RestartSec=10
 WorkingDirectory=/tmp
 
 ExecStart=/usr/bin/vlc -I dummy \
-    --rtsp-frame-buffer-size=100000 \
     --no-sout-rtp-sap \
     --no-sout-standard-sap \
     --ttl=1 \

@@ -82,7 +82,7 @@ echo "Connecting to: rtsp://${CAMERA_USER}:****@${CAMERA_IP}:${RTSP_PORT}${STREA
 echo ""
 
 # Run VLC for 10 seconds, then kill it
-timeout 10 vlc -I dummy --rtsp-frame-buffer-size=100000 "$RTSP_URL" vlc://quit 2>&1 | head -20 &
+timeout 10 vlc -I dummy "$RTSP_URL" vlc://quit 2>&1 | head -20 &
 VLC_PID=$!
 sleep 10
 kill $VLC_PID 2>/dev/null || true
@@ -114,7 +114,7 @@ echo ""
 
 if id "vlc-user" &>/dev/null; then
     echo "Testing VLC as vlc-user..."
-    timeout 10 sudo -u vlc-user vlc -I dummy --rtsp-frame-buffer-size=100000 "$RTSP_URL" vlc://quit 2>&1 | head -20 &
+    timeout 10 sudo -u vlc-user vlc -I dummy "$RTSP_URL" vlc://quit 2>&1 | head -20 &
     VLC_PID=$!
     sleep 10
     kill $VLC_PID 2>/dev/null || true
@@ -144,7 +144,6 @@ sleep 2
 
 # Test VLC streaming
 timeout 10 vlc -I dummy \
-    --rtsp-frame-buffer-size=100000 \
     --no-sout-rtp-sap \
     --no-sout-standard-sap \
     --ttl=1 \
