@@ -78,10 +78,11 @@ RestartSec=10
 WorkingDirectory=/tmp
 
 ExecStart=/usr/bin/vlc -I dummy \
+    --no-audio \
     --no-sout-rtp-sap \
     --no-sout-standard-sap \
     --ttl=1 \
-    --sout="#transcode{vcodec=h264,acodec=none}:rtp{sdp=${RTSP_DEST}}" \
+    --sout="#transcode{vcodec=h264}:rtp{sdp=${RTSP_DEST}}" \
     "${RTSP_SOURCE}"
 
 [Install]
