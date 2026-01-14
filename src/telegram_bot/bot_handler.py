@@ -280,6 +280,49 @@ class BotHandler:
         """Cek apakah bot sudah diinisialisasi"""
         return self.application is not None
     
+    async def send_motion_alert(self, frame, motion_percentage):
+        """
+        Kirim notifikasi deteksi gerakan ke Telegram
+        
+        Args:
+            frame: Frame dari kamera
+            motion_percentage: Persentase frame yang berubah
+        """
+        try:
+            if not self.chat_id:
+                self.logger.warning("Chat ID tidak tersedia")
+                return
+            
+            import cv2
+            import os
+            from datetime import datetime
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Kirim foto frame
+            temp_path = f"/tmp/motion_{timestamp}.jpg"
+            cv2.imwrite(temp_path, frame)
+            
+            message = f"📹 *MOTION DETECTED*\n\n" \
+                     f"📅 Waktu: {current_time}\n" \
+                     f"📊 Perubahan: {motion_percentage:.2f}%\n" \
+                     f"📍 Kamera: {self.camera.ip}\n\n" \
+                     f"Aktivitas terdeteksi dalam frame kamera."
+            
+            await self.application.bot.send_photo(
+                chat_id=self.chat_id,
+                photo=open(temp_path, 'rb'),
+                caption=message,
+                parse_mode='Markdown'
+            )
+            
+            os.remove(temp_path)
+            self.logger.info(f"Notifikasi gerakan terkirim ke {self.chat_id}")
+            
+        except Exception as e:
+            self.logger.error(f"Error kirim notifikasi gerakan: {str(e)}", exc_info=True)
+    
     def is_running(self) -> bool:
         """Cek apakah bot sedang berjalan"""
         if self.application and self.application.updater:

@@ -21,6 +21,7 @@ from camera.camera_manager import CameraManager
 from detection.face_detector import FaceDetector
 from detection.person_detector import PersonDetector
 from detection.face_recognition import FaceRecognition
+from detection.motion_detector import MotionDetector
 from telegram_bot.bot_handler import BotHandler
 
 
@@ -36,7 +37,11 @@ class CCTVTelebotApp:
         self.face_detector = None
         self.person_detector = None
         self.face_recognition = None
+        self.motion_detector = None
         self.bot_handler = None
+        
+        # Motion tracking
+        self.last_motion_time = 0
         
         # Konfigurasi
         self.config = None
@@ -147,6 +152,17 @@ class CCTVTelebotApp:
             )
             self.logger.info("Face recognition diinisialisasi")
             
+            # Motion Detector
+            if self.config['detection'].get('motion_detection_enabled', False):
+                motion_config = self.config.get('motion_detection', {})
+                self.motion_detector = MotionDetector(
+                    min_contour_area=motion_config.get('min_contour_area', 500),
+                    sensitivity=motion_config.get('sensitivity', 25)
+                )
+                self.logger.info("Motion detector diinisialisasi")
+            else:
+                self.logger.info("Motion detector dinonaktifkan")
+            
             # Telegram Bot
             self.bot_handler = BotHandler(
                 bot_token=self.telegram_config['bot_token'],
@@ -230,6 +246,27 @@ class CCTVTelebotApp:
                     
                     if ret and frame is not None:
                         self.logger.debug(f"Frame read successfully: {frame.shape}")
+                        
+                        # Deteksi gerakan (jika diaktifkan)
+                        has_motion = False
+                        motion_percentage = 0.0
+                        if self.motion_detector is not None:
+                            has_motion, motion_percentage, _ = self.motion_detector.detect_motion(frame)
+                            self.logger.info(f"Motion detection: has_motion={has_motion}, percentage={motion_percentage:.2f}%")
+                            
+                            # Kirim notifikasi jika ada gerakan
+                            motion_config = self.config.get('motion_detection', {})
+                            cooldown = motion_config.get('cooldown_seconds', 5)
+                            min_percentage = motion_config.get('min_motion_percentage', 2)
+                            
+                            if (has_motion and 
+                                motion_percentage >= min_percentage and
+                                current_time - self.last_motion_time >= cooldown):
+                                
+                                if self.config['notification'].get('send_on_motion', True):
+                                    self.logger.info(f"Motion detected! Percentage: {motion_percentage:.2f}%")
+                                    await self.bot_handler.send_motion_alert(frame, motion_percentage)
+                                    self.last_motion_time = current_time
                         
                         # Deteksi orang
                         if self.config['detection']['person_detection_enabled']:

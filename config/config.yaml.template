@@ -1,53 +1,68 @@
 # Konfigurasi CCTV AI Telegram Bot
-# Copy file ini ke config.yaml dan isi dengan konfigurasi Anda
 
-# Konfigurasi Kamera V380
-camera:
-  ip: "10.26.27.196"        # IP kamera V380
-  port: 80                  # Port kamera
-  username: "admin"         # Username login kamera
-  password: "Kuncong0203"    # Password login kamera
-  model: "v380"             # Model kamera
-  rtsp_port: 554            # Port RTSP untuk streaming
-  stream_url: "/1"          # URL stream (sesuaikan dengan kamera)
+# Konfigurasi Kamera
+cameras:
+  - id: 1
+    name: "CCTV Utama"
+    ip: "10.26.27.196"
+    port: 80
+    username: "admin"
+    password: "Kuncong0203"
+    rtsp_port: 554
+    stream_url: "/1"
+    enabled: true
+    
+  # Tambahkan kamera tambahan seperti ini:
+  # - id: 2
+  #   name: "CCTV Belakang"
+  #   ip: "10.26.27.197"
+  #   port: 80
+  #   username: "admin"
+  #   password: "password"
+  #   rtsp_port: 554
+  #   stream_url: "/1"
+  #   enabled: true
 
 # Konfigurasi Deteksi
 detection:
-  enabled: true             # Deteksi otomatis aktif
-  min_confidence: 0.7       # Minimum confidence untuk deteksi
+  enabled: true
+  min_confidence: 0.5       # Minimum confidence untuk deteksi orang (0.0-1.0)
   detection_interval: 2     # Interval deteksi dalam detik
-  face_recognition_enabled: true  # Pengenalan wajah aktif
-  person_detection_enabled: true  # Deteksi orang aktif
-  save_unknown_faces: true  # Simpan wajah yang tidak dikenal
-  max_detections_per_minute: 10  # Batas notifikasi per menit
+  face_recognition_enabled: true
+  person_detection_enabled: true
+  motion_detection_enabled: true  # Aktifkan deteksi gerakan
+  save_unknown_faces: true
+  max_detections_per_minute: 10
+
+# Konfigurasi Motion Detection
+motion_detection:
+  min_contour_area: 500    # Minimum area kontur untuk dianggap gerakan
+  sensitivity: 25            # Sensitivitas (semakin rendah = semakin sensitif)
+  cooldown_seconds: 5         # Jeda setiap notifikasi gerakan (detik)
+  min_motion_percentage: 2   # Minimum persentase frame yang berubah
 
 # Konfigurasi Notifikasi
 notification:
-  send_photo: true          # Kirim foto saat deteksi
-  send_video: false         # Kirim video clip (future feature)
-  alert_on_unknown: true    # Notifikasi untuk wajah tidak dikenal
-  alert_on_known: true      # Notifikasi untuk wajah dikenal
-  quiet_hours:              # Jam senyap (tanpa notifikasi)
-    enabled: false
-    start: "22:00"
-    end: "06:00"
-
-# Konfigurasi Database
+  send_on_motion: true     # Kirim notifikasi saat ada gerakan
+  send_on_person: true      # Kirim notifikasi saat ada orang
+  send_on_unknown_face: true
+  include_motion_mask: false # Sertakan mask gerakan di foto
+  
+# Konfigurasi Recording
+recording:
+  enabled: false           # Aktifkan rekaman video
+  save_directory: "data/recordings"
+  max_recording_duration: 30 # Durasi maksimal rekaman (detik)
+  storage_limit_gb: 10      # Batas penyimpanan (GB)
+  
+# Konfigurasi Database Wajah
 database:
-  face_encoding_tolerance: 0.6  # Toleransi pengenalan wajah (0.0-1.0)
-  max_faces_per_person: 10     # Maksimal foto per orang
-  auto_cleanup_days: 30        # Hapus deteksi lama setelah X hari
-
+  faces_directory: "data/faces"
+  face_encoding_tolerance: 0.6  # Tolerance untuk pengenalan wajah (0.0-1.0)
+  
 # Konfigurasi Logging
 logging:
-  level: "INFO"             # DEBUG, INFO, WARNING, ERROR
-  max_file_size: 10485760   # 10MB
-  backup_count: 5           # Jumlah backup log
-
-# Konfigurasi Sistem
-system:
-  max_fps: 15               # FPS maksimum
-  resolution: [640, 480]    # Resolusi video [lebar, tinggi]
-  enable_recording: false   # Rekam video (future feature)
-  recording_duration: 30    # Durasi rekaman dalam detik
-  cpu_usage_limit: 80       # Batas penggunaan CPU (%)
+  level: "INFO"           # DEBUG, INFO, WARNING, ERROR
+  log_directory: "logs"
+  max_log_size_mb: 10
+  backup_count: 5
