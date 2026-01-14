@@ -1,0 +1,10 @@
+{
+  "bot_token": "YOUR_BOT_TOKEN_HERE",
+  "chat_id": "YOUR_CHAT_ID_HERE",
+  "admin_id": "YOUR_ADMIN_ID_HERE",
+  "notification_settings": {
+    "enable_sound": true,
+    "enable_preview": true,
+    "notification_interval": 60
+  }
+}

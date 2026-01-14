@@ -1,0 +1,2 @@
+# File ini untuk memastikan direktori data disertakan di git
+# Isi direktori ini tidak akan di-track karena aturan di .gitignore

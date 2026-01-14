@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Data dan Logs (berisi informasi sensitif)
+data/faces/*
+data/detections/*
+data/recordings/*
+logs/*
+!data/.gitkeep
+!data/faces/.gitkeep
+!data/detections/.gitkeep
+!data/recordings/.gitkeep
+!logs/.gitkeep
+
+# Konfigurasi (berisi password sensitif)
+config/config.yaml
+config/telegram_config.json
+*.config
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Model files (large)
+*.h5
+*.pkl
+*.onnx
+*.pb
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Backup files
+*.backup
+*~
