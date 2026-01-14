@@ -158,10 +158,10 @@ class BotHandler:
                         temp_face_path = f"/tmp/face_zoom_{timestamp}_{i}.jpg"
                         cv2.imwrite(temp_face_path, face_crop)
                         
-                        # Kirim zoom wajah
-                        face_label = "Wajah Terdeteksi"
+                        # Kirim zoom dari person bbox (YOLOv8) - lebih akurat dari face detector
+                        face_label = "Wajah Terdeteksi (YOLOv8)"
                         face_distance = "N/A"
-                        bbox_info = f"Pos: {bbox}"
+                        bbox_info = f"Pos: {bbox} (Person Detection)"
                         
                         if i < len(recognized_faces):
                             face = recognized_faces[i]

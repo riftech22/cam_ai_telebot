@@ -56,6 +56,44 @@ class CCTVTelebotApp:
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
     
+    def _crop_face_from_bbox(self, frame, bbox, padding: int = 20):
+        """
+        Crop wajah dari frame berdasarkan bounding box person detection
+        
+        Args:
+            frame: Frame dari kamera
+            bbox: Bounding box (x, y, w, h) dari YOLOv8
+            padding: Padding tambahan di sekitar wajah
+            
+        Returns:
+            Cropped face image
+        """
+        try:
+            import cv2
+            
+            x, y, w, h = bbox
+            
+            # Tambahkan padding
+            x1 = max(0, x - padding)
+            y1 = max(0, y - padding)
+            x2 = min(frame.shape[1], x + w + padding)
+            y2 = min(frame.shape[0], y + h + padding)
+            
+            # Crop wajah
+            face = frame[y1:y2, x1:x2]
+            
+            # Verifikasi crop tidak kosong
+            if face.size > 0:
+                self.logger.debug(f"Cropped face from bbox: {bbox}, size: {face.shape}")
+                return face
+            else:
+                self.logger.warning(f"Empty face crop from bbox: {bbox}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error cropping face from bbox: {str(e)}")
+            return None
+    
     def _setup_logging(self):
         """Setup logging untuk aplikasi"""
         # Buat direktori logs jika belum ada
@@ -294,16 +332,24 @@ class CCTVTelebotApp:
                             if len(detected_persons) > 0 and current_time - self.last_person_detection_time >= person_cooldown:
                                 self.logger.info(f"Terdeteksi {len(detected_persons)} orang")
                                 
-                                # Deteksi wajah untuk zoom
-                                face_crops = []
+                                # Gunakan person bbox untuk zoom (lebih akurat dari face detector)
+                                person_bboxes = [(x, y, w, h) for x, y, w, h, conf in detected_persons]
+                                
+                                # Crop zoom dari person bbox
+                                person_crops = []
+                                for bbox in person_bboxes:
+                                    crop = self._crop_face_from_bbox(frame, bbox, padding=20)
+                                    if crop is not None:
+                                        person_crops.append((crop, bbox))
+                                
+                                # Deteksi wajah hanya untuk recognition, zoom gunakan person bbox
                                 recognized_faces = []
                                 if self.config['detection']['face_recognition_enabled']:
-                                    faces = self.face_detector.detect_and_crop_faces(frame)
+                                    faces = self.face_detector.detect_faces(frame)
                                     
                                     if len(faces) > 0:
-                                        face_images = [face[0] for face in faces]
+                                        face_images = [self._crop_face_from_bbox(frame, bbox) for bbox in faces]
                                         recognized_faces = self.face_recognition.recognize_faces(face_images)
-                                        face_crops = faces  # (cropped_face, bbox, confidence)
                                 
                                 # Update statistik
                                 if self.bot_handler.get_commands_instance():
@@ -311,9 +357,9 @@ class CCTVTelebotApp:
                                     stats['total'] += len(detected_persons)
                                     for face in recognized_faces:
                                         if face['status'] == 'known':
-                                            stats['known'] += 1
+                                            stats['known'] +=1
                                         else:
-                                            stats['unknown'] += 1
+                                            stats['unknown'] +=1
                                     
                                 # Kirim notifikasi SEGERA tanpa delay
                                 self.logger.info("Sending detection alert to Telegram...")
@@ -321,7 +367,7 @@ class CCTVTelebotApp:
                                     frame,
                                     detected_persons,
                                     recognized_faces,
-                                    face_crops  # Tambahkan face crops untuk zoom
+                                    person_crops  # Gunakan person crops untuk zoom
                                 )
                                 
                                 # Update tracking untuk mencegah duplicate motion notification
