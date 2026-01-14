@@ -181,7 +181,10 @@ class CCTVTelebotApp:
                 buffer_size=camera_config.get('buffer_size', 3),
                 fps=camera_config.get('fps', 15),
                 timeout=camera_config.get('timeout', 10),
-                max_retries=camera_config.get('max_retries', 5)
+                max_retries=camera_config.get('max_retries', 5),
+                use_vlc_proxy=camera_config.get('use_vlc_proxy', False),
+                vlc_rtsp_port=camera_config.get('vlc_rtsp_port', 8554),
+                vlc_rtsp_path=camera_config.get('vlc_rtsp_path', '/camera')
             )
             
             # Hubungkan ke kamera

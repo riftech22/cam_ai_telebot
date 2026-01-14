@@ -15,7 +15,9 @@ class CameraManager:
     def __init__(self, ip: str, port: int, username: str, password: str, 
                  rtsp_port: int = 554, stream_url: str = "/1",
                  buffer_size: int = 3, fps: int = 15, 
-                 timeout: int = 10, max_retries: int = 5):
+                 timeout: int = 10, max_retries: int = 5,
+                 use_vlc_proxy: bool = False, vlc_rtsp_port: int = 8554, 
+                 vlc_rtsp_path: str = "/camera"):
         """
         Inisialisasi Camera Manager
         
@@ -30,6 +32,9 @@ class CameraManager:
             fps: FPS target untuk streaming (default: 15)
             timeout: Timeout untuk koneksi (default: 10 detik)
             max_retries: Maksimal percobaan reconnect (default: 5)
+            use_vlc_proxy: Gunakan VLC RTSP proxy (default: False)
+            vlc_rtsp_port: Local RTSP port dari VLC proxy (default: 8554)
+            vlc_rtsp_path: RTSP path dari VLC proxy (default: /camera)
         """
         self.ip = ip
         self.port = port
@@ -41,6 +46,9 @@ class CameraManager:
         self.fps = fps
         self.timeout = timeout
         self.max_retries = max_retries
+        self.use_vlc_proxy = use_vlc_proxy
+        self.vlc_rtsp_port = vlc_rtsp_port
+        self.vlc_rtsp_path = vlc_rtsp_path
         self.cap: Optional[cv2.VideoCapture] = None
         self.is_connected = False
         self.last_frame_time = time.time()
@@ -55,11 +63,18 @@ class CameraManager:
         Returns:
             URL RTSP lengkap
         """
-        # Format RTSP untuk V380 dengan parameter optimasi
-        # rtsp_transport: tcp (lebih stabil dari udp)
-        # latency: 0 (real-time, no buffering)
-        rtsp_url = f"rtsp://{self.username}:{self.password}@{self.ip}:{self.rtsp_port}{self.stream_url}?rtsp_transport=tcp&latency=0"
-        self.logger.info(f"RTSP URL: rtsp://{self.username}:****@{self.ip}:{self.rtsp_port}{self.stream_url}")
+        if self.use_vlc_proxy:
+            # Gunakan VLC RTSP proxy (lebih stabil)
+            rtsp_url = f"rtsp://127.0.0.1:{self.vlc_rtsp_port}{self.vlc_rtsp_path}"
+            self.logger.info(f"RTSP URL (VLC Proxy): rtsp://127.0.0.1:{self.vlc_rtsp_port}{self.vlc_rtsp_path}")
+            self.logger.info(f"VLC proxy menjalankan stream dari kamera {self.ip}")
+        else:
+            # Format RTSP untuk V380 dengan parameter optimasi
+            # rtsp_transport: tcp (lebih stabil dari udp)
+            # latency: 0 (real-time, no buffering)
+            rtsp_url = f"rtsp://{self.username}:{self.password}@{self.ip}:{self.rtsp_port}{self.stream_url}?rtsp_transport=tcp&latency=0"
+            self.logger.info(f"RTSP URL (Direct): rtsp://{self.username}:****@{self.ip}:{self.rtsp_port}{self.stream_url}")
+        
         return rtsp_url
     
     def connect(self) -> bool:

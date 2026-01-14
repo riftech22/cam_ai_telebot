@@ -9,6 +9,23 @@ camera:
   rtsp_port: 554
   stream_url: "/1"
   
+  # VLC RTSP Proxy Settings (Untuk koneksi yang lebih stabil)
+  use_vlc_proxy: false      # Gunakan VLC sebagai RTSP proxy (true/false)
+  vlc_rtsp_port: 8554     # Local RTSP port dari VLC proxy (default: 8554)
+  vlc_rtsp_path: "/camera" # RTSP path dari VLC proxy (default: /camera)
+  
+  # Cara menggunakan VLC RTSP Proxy:
+  # 1. Jalankan: bash scripts/setup_vlc_proxy.sh
+  # 2. VLC akan connect ke kamera dan re-stream ke rtsp://127.0.0.1:8554/camera
+  # 3. Set use_vlc_proxy: true di config ini
+  # 4. Restart bot: sudo systemctl restart cctv-ai-bot
+  # 
+  # VLC Proxy lebih stabil karena:
+  # - Better RTSP handling dari OpenCV langsung
+  # - TCP transport by default
+  # - Large buffer frame (100000)
+  # - Auto-reconnect jika kamera putus
+  
   # Camera Connection Settings
   buffer_size: 3          # Buffer size untuk stabilitas (1-5, default: 3)
   fps: 15                  # Target FPS untuk streaming (10-30, default: 15)
