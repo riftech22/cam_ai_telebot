@@ -40,8 +40,10 @@ class CCTVTelebotApp:
         self.motion_detector = None
         self.bot_handler = None
         
-        # Motion tracking
+        # Tracking untuk mencegah duplicate notifications
         self.last_motion_time = 0
+        self.last_person_detection_time = 0
+        self.notification_cooldown = 5  # detik
         
         # Konfigurasi
         self.config = None
@@ -271,7 +273,11 @@ class CCTVTelebotApp:
                                 motion_percentage >= min_percentage and
                                 current_time - self.last_motion_time >= cooldown):
                                 
-                                if self.config['notification'].get('send_on_motion', True):
+                                # Skip motion notification jika person detection baru saja terjadi
+                                # untuk mencegah duplicate foto
+                                if current_time - self.last_person_detection_time < self.notification_cooldown:
+                                    self.logger.info("Motion detected skipped - person detection sent recently")
+                                elif self.config['notification'].get('send_on_motion', True):
                                     self.logger.info(f"Motion detected! Percentage: {motion_percentage:.2f}%")
                                     await self.bot_handler.send_motion_alert(frame, motion_percentage)
                                     self.last_motion_time = current_time
@@ -314,6 +320,9 @@ class CCTVTelebotApp:
                                     recognized_faces,
                                     face_crops  # Tambahkan face crops untuk zoom
                                 )
+                                
+                                # Update tracking untuk mencegah duplicate motion notification
+                                self.last_person_detection_time = current_time
                                 
                                 # Reset timer agar deteksi berikutnya tidak perlu tunggu lama
                                 last_detection_time = current_time
