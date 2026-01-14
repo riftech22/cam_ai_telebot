@@ -81,9 +81,6 @@ class CameraManager:
             self.cap.set(cv2.CAP_PROP_FPS, self.fps)
             self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'H264'))
             
-            # Set backend ke FFmpeg untuk lebih stabil
-            self.cap.set(cv2.CAP_PROP_BACKEND, cv2.CAP_FFMPEG)
-            
             # Test koneksi dengan membaca beberapa frame
             success_count = 0
             for i in range(5):  # Coba 5 frame untuk memastikan stabil
