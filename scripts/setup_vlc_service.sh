@@ -81,8 +81,13 @@ ExecStart=/usr/bin/vlc -I dummy \
     --no-audio \
     --no-sout-rtp-sap \
     --no-sout-standard-sap \
-    --sout="#transcode{vcodec=h264,acodec=none}:std{access=http,mux=ts,dst=:${LOCAL_RTSP_PORT}}" \
+    --sout="#transcode{vcodec=h264}:std{access=http,mux=ts,dst=:${LOCAL_RTSP_PORT}}" \
     "${RTSP_SOURCE}"
+
+# Note: Using HTTP-TCP streaming instead of RTSP because VLC 3.0.16
+# doesn't have built-in RTSP server module. HTTP streaming is more reliable
+# and compatible with OpenCV VideoCapture.
+# acodec=none removed to avoid MP3 header missing errors.
 
 # Note: Using HTTP-TCP streaming instead of RTSP because VLC 3.0.16
 # doesn't have built-in RTSP server module. HTTP streaming is more reliable
