@@ -60,6 +60,10 @@ echo ""
 
 SERVICE_FILE="/etc/systemd/system/vlc-rtsp-proxy.service"
 
+# Build RTSP URL dan VLC command untuk menghindari escaping issues
+RTSP_SOURCE="rtsp://${CAMERA_USER}:${CAMERA_PASS}@${CAMERA_IP}:${RTSP_PORT}${STREAM_URL}?rtsp_transport=tcp&latency=0"
+RTSP_DEST="rtsp://127.0.0.1:${LOCAL_RTSP_PORT}/camera"
+
 sudo tee $SERVICE_FILE > /dev/null <<EOF
 [Unit]
 Description=VLC RTSP Proxy for CCTV AI Bot
@@ -71,12 +75,7 @@ User=vlc-user
 Group=vlc-user
 Restart=always
 RestartSec=10
-Environment="CAMERA_IP=$CAMERA_IP"
-Environment="CAMERA_USER=$CAMERA_USER"
-Environment="CAMERA_PASS=$CAMERA_PASS"
-Environment="RTSP_PORT=$RTSP_PORT"
-Environment="STREAM_URL=$STREAM_URL"
-Environment="LOCAL_RTSP_PORT=$LOCAL_RTSP_PORT"
+WorkingDirectory=/tmp
 
 ExecStart=/usr/bin/vlc -I dummy \
     --rtsp-tcp \
@@ -84,8 +83,8 @@ ExecStart=/usr/bin/vlc -I dummy \
     --no-sout-rtp-sap \
     --no-sout-standard-sap \
     --ttl=1 \
-    --sout="#transcode{vcodec=h264,acodec=none}:rtp{sdp=rtsp://127.0.0.1:\${LOCAL_RTSP_PORT}/camera}" \
-    "rtsp://\${CAMERA_USER}:\${CAMERA_PASS}@\${CAMERA_IP}:\${RTSP_PORT}\${STREAM_URL}?rtsp_transport=tcp&latency=0" \
+    --sout="#transcode{vcodec=h264,acodec=none}:rtp{sdp=${RTSP_DEST}}" \
+    "${RTSP_SOURCE}" \
     vlc://quit
 
 [Install]
