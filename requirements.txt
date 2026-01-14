@@ -28,12 +28,18 @@ scipy==1.11.3
 # Gunakan versi yang kompatibel dengan CMake 3.22+
 dlib==19.24.4
 
+# PyTorch untuk deep learning (downgrade untuk kompatibilitas)
+# PyTorch 2.5.1 lebih stabil dengan ultralytics
+torch==2.5.1
+torchvision==0.20.1
+torchaudio==2.5.1
+
 # Runtime untuk model ONNX
 onnxruntime==1.16.3
 
 # YOLOv8 untuk deteksi orang yang lebih akurat
-# Updated to latest version for PyTorch 2.6+ compatibility
-ultralytics==8.1.0
+# Ultralytics 8.2.0 kompatibel dengan PyTorch 2.5.1
+ultralytics==8.2.0
 cvzone==1.6.1
 
 # Logging

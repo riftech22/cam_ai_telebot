@@ -5,6 +5,7 @@ Person Detector - Mendeteksi keberadaan orang dalam frame menggunakan YOLOv8n
 import cv2
 import logging
 import numpy as np
+import torch
 from typing import List, Tuple, Optional
 from ultralytics import YOLO
 
@@ -31,18 +32,42 @@ class PersonDetector:
     def _load_model(self):
         """Memuat model YOLOv8n untuk deteksi orang"""
         try:
-            # Load model YOLOv8n (nano model - tercepat dan paling ringan)
-            self.logger.info(f"Memuat model YOLO{self.model_size[5:]}...")
-            self.model = YOLO(f"{self.model_size}.pt")
+            # Set torch.load dengan weights_only=False untuk kompatibilitas
+            import torch.serialization
             
-            self.logger.info(f"Model YOLO{self.model_size[5:]} berhasil dimuat")
+            # Disable weights_only untuk memuat model YOLO dari Ultralytics (trusted source)
+            original_load = torch.load
+            def custom_load(*args, **kwargs):
+                kwargs['weights_only'] = False
+                return original_load(*args, **kwargs)
+            torch.load = custom_load
             
+            try:
+                # Load model YOLOv8n (nano model - tercepat dan paling ringan)
+                self.logger.info(f"Memuat model YOLO{self.model_size[5:]}...")
+                self.model = YOLO(f"{self.model_size}.pt")
+                self.logger.info(f"Model YOLO{self.model_size[5:]} berhasil dimuat")
+            finally:
+                # Restore original torch.load
+                torch.load = original_load
+                
         except Exception as e:
             self.logger.error(f"Error memuat model YOLO: {str(e)}")
             self.logger.info("Mencoba download model dari Ultralytics...")
             try:
-                self.model = YOLO(self.model_size)
-                self.logger.info("Model berhasil didownload dan dimuat")
+                # Coba dengan weights_only=False juga
+                original_load = torch.load
+                def custom_load(*args, **kwargs):
+                    kwargs['weights_only'] = False
+                    return original_load(*args, **kwargs)
+                torch.load = custom_load
+                
+                try:
+                    self.model = YOLO(self.model_size)
+                    self.logger.info("Model berhasil didownload dan dimuat")
+                finally:
+                    torch.load = original_load
+                    
             except Exception as e2:
                 self.logger.error(f"Gagal memuat model YOLO: {str(e2)}")
     
