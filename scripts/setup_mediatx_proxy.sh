@@ -79,24 +79,24 @@ echo ""
 CONFIG_DIR="/etc/mediamtx"
 sudo mkdir -p $CONFIG_DIR
 
-sudo tee $CONFIG_DIR/mediamtx.yml > /dev/null <<EOF
-# MediaTX Configuration for CCTV AI Bot
-# Simple and Reliable RTSP Server
+# Hapus semua config lama
+sudo rm -f $CONFIG_DIR/*.yml
+sudo rm -f $CONFIG_DIR/*.conf
 
+# Buat config minimal yang VALID untuk MediaTX v1.8.0
+sudo bash -c "cat > $CONFIG_DIR/mediamtx.yml << 'EOFCONFIG'
 logLevel: info
-
-# RTSP Server
-rtsp:
-  address: 127.0.0.1
-  port: $LOCAL_RTSP_PORT
-
-# Read from TCP (receive from FFmpeg)
-paths:
-  camera:
-    source: tcp://127.0.0.1:1554
-EOF
+rtspAddress: 127.0.0.1
+rtspPort: $LOCAL_RTSP_PORT
+pathCamera: tcp://127.0.0.1:1554
+EOFCONFIG"
 
 echo "✅ MediaTX config created: $CONFIG_DIR/mediamtx.yml"
+echo ""
+
+# Cek config
+echo "Config content:"
+cat $CONFIG_DIR/mediamtx.yml
 echo ""
 
 # Buat systemd service untuk MediaTX
