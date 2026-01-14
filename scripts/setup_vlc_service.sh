@@ -82,8 +82,7 @@ ExecStart=/usr/bin/vlc -I dummy \
     --no-sout-standard-sap \
     --ttl=1 \
     --sout="#transcode{vcodec=h264,acodec=none}:rtp{sdp=${RTSP_DEST}}" \
-    "${RTSP_SOURCE}" \
-    vlc://quit
+    "${RTSP_SOURCE}"
 
 [Install]
 WantedBy=multi-user.target
