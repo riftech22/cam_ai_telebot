@@ -186,7 +186,9 @@ class CCTVTelebotApp:
                 vlc_rtsp_port=camera_config.get('vlc_rtsp_port', 8554),
                 vlc_rtsp_path=camera_config.get('vlc_rtsp_path', '/camera'),
                 use_http_stream=camera_config.get('use_http_stream', False),
-                vlc_http_port=camera_config.get('vlc_http_port', 8554)
+                vlc_http_port=camera_config.get('vlc_http_port', 8554),
+                use_gstreamer_proxy=camera_config.get('use_gstreamer_proxy', False),
+                gstreamer_rtsp_port=camera_config.get('gstreamer_rtsp_port', 8554)
             )
             
             # Hubungkan ke kamera

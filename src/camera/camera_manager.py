@@ -18,7 +18,8 @@ class CameraManager:
                  timeout: int = 10, max_retries: int = 5,
                  use_vlc_proxy: bool = False, vlc_rtsp_port: int = 8554, 
                  vlc_rtsp_path: str = "/camera", use_http_stream: bool = False,
-                 vlc_http_port: int = 8554):
+                 vlc_http_port: int = 8554, use_gstreamer_proxy: bool = False,
+                 gstreamer_rtsp_port: int = 8554):
         """
         Inisialisasi Camera Manager
         
@@ -52,6 +53,8 @@ class CameraManager:
         self.vlc_rtsp_path = vlc_rtsp_path
         self.use_http_stream = use_http_stream
         self.vlc_http_port = vlc_http_port
+        self.use_gstreamer_proxy = use_gstreamer_proxy
+        self.gstreamer_rtsp_port = gstreamer_rtsp_port
         self.cap: Optional[cv2.VideoCapture] = None
         self.is_connected = False
         self.last_frame_time = time.time()
@@ -66,7 +69,13 @@ class CameraManager:
         Returns:
             URL RTSP/HTTP lengkap
         """
-        if self.use_http_stream:
+        if self.use_gstreamer_proxy:
+            # Gunakan GStreamer RTSP Proxy (PALING STABIL dan RELIABLE)
+            rtsp_url = f"rtsp://127.0.0.1:{self.gstreamer_rtsp_port}"
+            self.logger.info(f"RTSP URL (GStreamer Proxy): rtsp://127.0.0.1:{self.gstreamer_rtsp_port}")
+            self.logger.info(f"GStreamer proxy menjalankan stream dari kamera {self.ip}")
+            return rtsp_url
+        elif self.use_http_stream:
             # Gunakan VLC HTTP-TCP streaming (lebih stabil, VLC 3.0.16 compatible)
             http_url = f"http://127.0.0.1:{self.vlc_http_port}"
             self.logger.info(f"HTTP-TCP URL (VLC Proxy): http://127.0.0.1:{self.vlc_http_port}")
