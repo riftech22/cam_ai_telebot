@@ -59,7 +59,8 @@ apt install -y libboost-python-dev
 
 # Buat virtual environment
 echo "[4/8] Membuat virtual environment..."
-cd /home/riftech/projeck/cam_ai_telebot
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+cd "$SCRIPT_DIR"
 python3 -m venv venv
 
 # Activate virtual environment
