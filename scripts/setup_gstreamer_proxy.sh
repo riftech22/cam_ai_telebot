@@ -70,19 +70,20 @@ WorkingDirectory=/tmp
 
 ExecStart=/usr/bin/gst-launch-1.0 -v \
     rtspsrc location="rtsp://${CAMERA_USER}:${CAMERA_PASS}@${CAMERA_IP}:${RTSP_PORT}${STREAM_URL}?rtsp_transport=tcp&latency=0" ! \
+    queue max-size-buffers=1000 ! \
     rtph265depay ! \
     h265parse ! \
     decodebin ! \
+    video/x-raw,format=I420 ! \
     videoconvert ! \
     x264enc bitrate=2048 speed-preset=superfast tune=zerolatency threads=4 ! \
     rtph264pay pt=96 ! \
-    queue max-size-buffers=1000 ! \
-    udpsink host=127.0.0.1 port=${LOCAL_RTSP_PORT} sync=false
+    rtspsink port=${LOCAL_RTSP_PORT}
 
 # Note: Using GStreamer for RTSP re-streaming
 # GStreamer is more stable and reliable than VLC for this purpose
-# Pipeline: RTSP Source (H.265) -> Depay -> Parse -> Decode -> Convert -> Encode (H.264) -> Pay -> Queue -> UDP Sink
-# Result: rtsp://127.0.0.1:8554 (OpenCV compatible H.264 stream)
+# Pipeline: RTSP Source (H.265) -> Depay -> Parse -> Decode -> Convert -> Encode (H.264) -> Pay -> RTSP Sink
+# Result: rtsp://127.0.0.1:8554 (OpenCV compatible H.264 RTSP stream)
 
 [Install]
 WantedBy=multi-user.target
