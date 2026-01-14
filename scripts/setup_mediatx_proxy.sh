@@ -89,11 +89,8 @@ logLevel: info
 rtsp:
   address: 127.0.0.1
   port: $LOCAL_RTSP_PORT
-  readTimeout: 10s
-  writeTimeout: 10s
-  keepaliveInterval: 30s
-  
-# RTSP Source dari FFmpeg
+
+# Read from TCP (receive from FFmpeg)
 paths:
   camera:
     source: tcp://127.0.0.1:1554
