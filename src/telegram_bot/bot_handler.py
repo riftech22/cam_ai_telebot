@@ -99,24 +99,28 @@ class BotHandler:
             
             # Kirim zoom wajah jika ada
             if face_crops and len(face_crops) > 0:
-                for i, (face_crop, bbox, confidence) in enumerate(face_crops):
+                for i, (face_crop, bbox) in enumerate(face_crops):
                     # Simpan zoom wajah
                     temp_face_path = f"/tmp/face_zoom_{timestamp}_{i}.jpg"
                     cv2.imwrite(temp_face_path, face_crop)
                     
                     # Kirim zoom wajah
                     face_label = "Wajah Terdeteksi"
+                    face_distance = "N/A"
+                    
                     if i < len(recognized_faces):
                         face = recognized_faces[i]
                         if face['status'] == 'known':
                             face_label = f"👤 {face['display_name']}"
+                            face_distance = f"{face['distance']:.2f}"
                         else:
                             face_label = "❓ Wajah Tidak Dikenal"
+                            face_distance = "N/A"
                     
                     await self.application.bot.send_photo(
                         chat_id=self.chat_id,
                         photo=open(temp_face_path, 'rb'),
-                        caption=f"🔍 {face_label}\n📊 Confidence: {confidence:.2f}",
+                        caption=f"🔍 {face_label}\n📊 Distance: {face_distance}",
                         parse_mode='Markdown'
                     )
                     
